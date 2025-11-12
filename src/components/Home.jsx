@@ -23,7 +23,7 @@ const Home = () => {
       <section className="hero">
         <p className="tagline">AI-Powered Academic Collaboration</p>
         <h1>
-          Transform Team Projects into <span className="highlight">Success Stories</span>
+          Transform Team Projects into <span>Success Stories</span>
         </h1>
         <p className="hero-subtitle">
           Connect with teammates, manage projects seamlessly, and leverage ML insights to build exceptional academic collaborations.
