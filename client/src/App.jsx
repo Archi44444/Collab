@@ -4,15 +4,17 @@ import Home from './components/Home';
 import Login from './components/login';  
 import Dashboard from './components/Dashboard';
 import './App.css';
+import Register from './components/Register';
 
 function App() {
   return (
     <div className="App">
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/Login" element={<Login />} />
         <Route path="/signin" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+         <Route path="/Register" element={<Register />} />
+        <Route path="/Dashboard" element={<Dashboard />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
