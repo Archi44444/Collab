@@ -618,4 +618,58 @@
     font-size: 1.5rem;
   }
 }
-    
+/* Empty State for Kanban */
+.empty-state-kanban {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 20px;
+  text-align: center;
+}
+
+.empty-icon-large {
+  font-size: 5rem;
+  margin-bottom: 24px;
+  opacity: 0.5;
+}
+
+.empty-state-kanban h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 12px;
+}
+
+.empty-state-kanban p {
+  font-size: 1.05rem;
+  color: #64748b;
+  margin-bottom: 30px;
+}
+
+/* Create First Project Button */
+.btn-create-first {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 32px;
+  background: linear-gradient(90deg, #3b82f6 0%, #06b6d4 100%);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+}
+
+.btn-create-first:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.btn-create-first:active {
+  transform: translateY(0);
+}
