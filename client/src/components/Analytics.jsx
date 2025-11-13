@@ -1,308 +1,180 @@
-import React, { useState, useEffect } from 'react';
-import './Analytics.css';
+import React, { useState, useEffect } from "react";
+import "./Analytics.css";
 
-const Analytics = ({ kanbanData }) => {
-  const [analyticsData, setAnalyticsData] = useState({
-    totalProjects: 0,
-    activeProjects: 0,
-    completedProjects: 0,
-    completionRate: 0,
-    avgProjectDuration: 0,
-    teamCollaboration: 0,
-    sentimentScore: 0
-  });
+const Analytics = () => {
+  const [analyticsData, setAnalyticsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [projectBreakdown, setProjectBreakdown] = useState([]);
+  // API base URL
+  const API_BASE = "http://127.0.0.1:8000";
 
+  // Fetch analytics data from FastAPI backend
   useEffect(() => {
-    if (kanbanData) {
-      calculateAnalytics();
-    }
-  }, [kanbanData]);
+    const fetchAnalytics = async () => {
+      try {
+        // sample payload for /api/analytics
+        const sampleData = {
+          students: [
+            {
+              student: "Aarav",
+              tasks_assigned: 10,
+              tasks_completed: 9,
+              commits: 25,
+              feedback: "Aarav communicates well and delivers tasks on time.",
+            },
+            {
+              student: "Priya",
+              tasks_assigned: 8,
+              tasks_completed: 6,
+              commits: 15,
+              feedback: "Priya needs to improve her pace, but great designs.",
+            },
+            {
+              student: "Rohan",
+              tasks_assigned: 7,
+              tasks_completed: 7,
+              commits: 18,
+              feedback: "Rohan is consistent and helps others often.",
+            },
+            {
+              student: "Aanya",
+              tasks_assigned: 9,
+              tasks_completed: 5,
+              commits: 10,
+              feedback: "Aanya missed some deadlines but contributes new ideas.",
+            },
+            {
+              student: "Arjun",
+              tasks_assigned: 6,
+              tasks_completed: 4,
+              commits: 12,
+              feedback: "Arjun works hard but sometimes overthinks details.",
+            },
+          ],
+        };
 
-  const calculateAnalytics = () => {
-    const todoCount = kanbanData.todo?.length || 0;
-    const inProgressCount = kanbanData.inProgress?.length || 0;
-    const completedCount = kanbanData.completed?.length || 0;
-    const totalProjects = todoCount + inProgressCount + completedCount;
+        // First try the real backend route
+        const response = await fetch(`${API_BASE}/api/analytics`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sampleData),
+        });
 
-    const completionRate = totalProjects > 0 
-      ? Math.round((completedCount / totalProjects) * 100) 
-      : 0;
+        if (!response.ok) {
+          // fallback to /analytics (demo mode)
+          console.warn("⚠️ /api/analytics failed, trying /analytics instead...");
+          const demoRes = await fetch(`${API_BASE}/analytics`);
+          if (!demoRes.ok) throw new Error("Both analytics routes failed");
+          const demoData = await demoRes.json();
+          setAnalyticsData(demoData.students || demoData || []);
+        } else {
+          const data = await response.json();
+          setAnalyticsData(data.students || []);
+        }
 
-    // Simulate sentiment analysis (positive collaboration score)
-    const sentimentScore = totalProjects > 0 
-      ? Math.min(85 + (completedCount * 2), 100) 
-      : 0;
+        setLoading(false);
+      } catch (err) {
+        console.error("❌ Analytics Fetch Error:", err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
 
-    // Team collaboration score based on active projects
-    const teamCollaboration = inProgressCount > 0 
-      ? Math.min(70 + (inProgressCount * 5), 100) 
-      : 0;
+    fetchAnalytics();
+  }, []);
 
-    setAnalyticsData({
-      totalProjects,
-      activeProjects: inProgressCount,
-      completedProjects: completedCount,
-      completionRate,
-      avgProjectDuration: totalProjects > 0 ? Math.round(14 + Math.random() * 10) : 0,
-      teamCollaboration,
-      sentimentScore
-    });
-
-    // Project breakdown
-    setProjectBreakdown([
-      { label: 'To Do', count: todoCount, percentage: totalProjects > 0 ? (todoCount / totalProjects) * 100 : 0, color: '#f59e0b' },
-      { label: 'In Progress', count: inProgressCount, percentage: totalProjects > 0 ? (inProgressCount / totalProjects) * 100 : 0, color: '#3b82f6' },
-      { label: 'Completed', count: completedCount, percentage: totalProjects > 0 ? (completedCount / totalProjects) * 100 : 0, color: '#10b981' }
-    ]);
-  };
-
-  const MetricCard = ({ icon, title, value, subtitle, color }) => (
-    <div className="metric-card">
-      <div className={`metric-icon ${color}`}>
-        {icon}
+  // ----------------------------
+  // Render logic
+  // ----------------------------
+  if (loading) {
+    return (
+      <div className="analytics-container">
+        <h3>📊 Loading ML-powered Analytics...</h3>
       </div>
-      <div className="metric-content">
-        <h4>{title}</h4>
-        <div className="metric-value">{value}</div>
-        {subtitle && <p className="metric-subtitle">{subtitle}</p>}
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="analytics-container">
+        <h3>❌ Error loading analytics</h3>
+        <p>{error}</p>
+        <p>Make sure your FastAPI backend is running on port 8000.</p>
       </div>
-    </div>
-  );
+    );
+  }
 
-  const ProgressBar = ({ percentage, color }) => (
-    <div className="progress-bar-container">
-      <div 
-        className="progress-bar-fill" 
-        style={{ 
-          width: `${percentage}%`,
-          backgroundColor: color 
-        }}
-      />
-    </div>
-  );
+  if (!analyticsData || analyticsData.length === 0) {
+    return (
+      <div className="empty-state-analytics">
+        <div className="empty-icon-analytics">📊</div>
+        <h3>No Analytics Data Yet</h3>
+        <p>Backend returned no data. Try adding some student records.</p>
+      </div>
+    );
+  }
 
+  // ----------------------------
+  // Render Table and Summary
+  // ----------------------------
   return (
     <div className="analytics-container">
-      {analyticsData.totalProjects === 0 ? (
-        <div className="empty-state-analytics">
-          <div className="empty-icon-analytics">📊</div>
-          <h3>No Analytics Data Yet</h3>
-          <p>Create projects to start seeing insights and analytics</p>
-        </div>
-      ) : (
-        <>
-          <div className="analytics-header">
-            <h2>Analytics Dashboard</h2>
-            <p>Track your progress and get actionable insights</p>
-          </div>
+      <div className="analytics-header">
+        <h2>📈 Project Analytics Dashboard</h2>
+        <p>Real-time insights powered by Hugging Face Sentiment Analysis</p>
+      </div>
 
-          {/* Key Metrics Grid */}
-          <div className="metrics-grid">
-            <MetricCard
-              icon="📁"
-              title="Total Projects"
-              value={analyticsData.totalProjects}
-              subtitle="All time"
-              color="blue"
-            />
-            <MetricCard
-              icon="🔄"
-              title="Active Projects"
-              value={analyticsData.activeProjects}
-              subtitle="In progress now"
-              color="cyan"
-            />
-            <MetricCard
-              icon="✓"
-              title="Completed"
-              value={analyticsData.completedProjects}
-              subtitle={`${analyticsData.completionRate}% completion rate`}
-              color="green"
-            />
-            <MetricCard
-              icon="📅"
-              title="Avg Duration"
-              value={`${analyticsData.avgProjectDuration} days`}
-              subtitle="Per project"
-              color="orange"
-            />
-          </div>
+      <div className="analytics-table-section">
+        <table className="analytics-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Completion Rate (%)</th>
+              <th>Commits</th>
+              <th>Sentiment</th>
+              <th>Sentiment Score</th>
+              <th>Quality Score</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {analyticsData.map((row, index) => (
+              <tr key={index}>
+                <td>{row.student || row.Student}</td>
+                <td>{row.completion_rate || row.Completion_Rate}</td>
+                <td>{row.commits || row.Commits}</td>
+                <td>
+                  {row.sentiment_emoji
+                    ? `${row.sentiment_emoji} ${row.sentiment}`
+                    : row.sentiment}
+                </td>
+                <td>
+                  {row.sentiment_score
+                    ? row.sentiment_score.toFixed(2)
+                    : row.Sentiment_Score}
+                </td>
+                <td>{row.quality_score || row.Performance_Score}</td>
+                <td>{row.project_status || row.Project_Status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-          {/* ML-Powered Insights Section */}
-          <div className="insights-section">
-            <div className="section-title">
-              <span className="brain-icon">🧠</span>
-              <h3>ML-Powered Insights</h3>
-            </div>
-
-            <div className="insights-grid">
-              <div className="insight-card sentiment">
-                <div className="insight-header">
-                  <h4>Team Sentiment Analysis</h4>
-                  <span className="insight-badge positive">Positive</span>
-                </div>
-                <div className="insight-score">
-                  <div className="score-circle">
-                    <svg viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        stroke="#e2e8f0"
-                        strokeWidth="10"
-                      />
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        stroke="#10b981"
-                        strokeWidth="10"
-                        strokeDasharray={`${analyticsData.sentimentScore * 2.827} 282.7`}
-                        strokeLinecap="round"
-                        transform="rotate(-90 50 50)"
-                      />
-                    </svg>
-                    <div className="score-text">{analyticsData.sentimentScore}%</div>
-                  </div>
-                  <p className="insight-description">
-                    Team collaboration shows positive sentiment. Members are engaged and productive.
-                  </p>
-                </div>
-              </div>
-
-              <div className="insight-card collaboration">
-                <div className="insight-header">
-                  <h4>Collaboration Health Score</h4>
-                  <span className={`insight-badge ${analyticsData.teamCollaboration >= 70 ? 'positive' : 'neutral'}`}>
-                    {analyticsData.teamCollaboration >= 70 ? 'Healthy' : 'Fair'}
-                  </span>
-                </div>
-                <div className="insight-score">
-                  <div className="score-circle">
-                    <svg viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        stroke="#e2e8f0"
-                        strokeWidth="10"
-                      />
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        stroke="#3b82f6"
-                        strokeWidth="10"
-                        strokeDasharray={`${analyticsData.teamCollaboration * 2.827} 282.7`}
-                        strokeLinecap="round"
-                        transform="rotate(-90 50 50)"
-                      />
-                    </svg>
-                    <div className="score-text">{analyticsData.teamCollaboration}%</div>
-                  </div>
-                  <p className="insight-description">
-                    Active collaboration detected. Teams are working well together on multiple projects.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Project Breakdown Section */}
-          <div className="breakdown-section">
-            <div className="section-title">
-              <span className="chart-icon">📊</span>
-              <h3>Project Distribution</h3>
-            </div>
-
-            <div className="breakdown-chart">
-              {projectBreakdown.map((item, index) => (
-                <div key={index} className="breakdown-item">
-                  <div className="breakdown-label">
-                    <div 
-                      className="breakdown-color-dot" 
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="breakdown-name">{item.label}</span>
-                    <span className="breakdown-count">{item.count}</span>
-                  </div>
-                  <ProgressBar percentage={item.percentage} color={item.color} />
-                  <span className="breakdown-percentage">{Math.round(item.percentage)}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Recommendations Section */}
-          <div className="recommendations-section">
-            <div className="section-title">
-              <span className="lightbulb-icon">💡</span>
-              <h3>Recommendations</h3>
-            </div>
-
-            <div className="recommendations-list">
-              {analyticsData.activeProjects === 0 && analyticsData.totalProjects > 0 && (
-                <div className="recommendation-card">
-                  <div className="recommendation-icon">🚀</div>
-                  <div className="recommendation-content">
-                    <h4>Start Working on Projects</h4>
-                    <p>You have {kanbanData.todo.length} projects in To Do. Move them to In Progress to boost productivity.</p>
-                  </div>
-                </div>
-              )}
-
-              {analyticsData.completionRate < 50 && analyticsData.totalProjects > 2 && (
-                <div className="recommendation-card">
-                  <div className="recommendation-icon">🎯</div>
-                  <div className="recommendation-content">
-                    <h4>Focus on Completing Projects</h4>
-                    <p>Your completion rate is {analyticsData.completionRate}%. Try focusing on finishing current projects before starting new ones.</p>
-                  </div>
-                </div>
-              )}
-
-              {analyticsData.activeProjects > 5 && (
-                <div className="recommendation-card">
-                  <div className="recommendation-icon">⚡</div>
-                  <div className="recommendation-content">
-                    <h4>High Workload Detected</h4>
-                    <p>You have {analyticsData.activeProjects} active projects. Consider prioritizing or delegating tasks.</p>
-                  </div>
-                </div>
-              )}
-
-              {analyticsData.completionRate >= 80 && analyticsData.totalProjects >= 3 && (
-                <div className="recommendation-card success">
-                  <div className="recommendation-icon">🎉</div>
-                  <div className="recommendation-content">
-                    <h4>Excellent Progress!</h4>
-                    <p>You're maintaining an {analyticsData.completionRate}% completion rate. Keep up the great work!</p>
-                  </div>
-                </div>
-              )}
-
-              {analyticsData.totalProjects === 0 && (
-                <div className="recommendation-card">
-                  <div className="recommendation-icon">📋</div>
-                  <div className="recommendation-content">
-                    <h4>Get Started</h4>
-                    <p>Create your first project to start tracking your progress and collaboration metrics.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </>
-      )}
+      <div className="analytics-summary">
+        <h3>💡 Insights Summary</h3>
+        <ul>
+          <li>⚙️ Data includes automatic Hugging Face sentiment evaluation.</li>
+          <li>
+            📊 Completion rate, commits, and feedback are combined for
+            AI-powered performance scoring.
+          </li>
+          <li>🚦 Status flags: 🟢 On Track | 🟠 Moderate | 🔴 At Risk</li>
+        </ul>
+      </div>
     </div>
   );
 };
 
 export default Analytics;
-
