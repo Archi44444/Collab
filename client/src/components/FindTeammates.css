@@ -591,3 +591,460 @@
   color: #64748b;
   max-width: 500px;
 }
+
+/* Add these styles to your existing FindTeammates.css */
+
+/* AI Badge and Settings */
+.ai-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn-team-builder,
+.btn-ai-settings {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-team-builder {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-team-builder:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-ai-settings {
+  background: white;
+  border: 2px solid #667eea;
+  color: #667eea;
+}
+
+.btn-ai-settings:hover {
+  background: #667eea;
+  color: white;
+}
+
+/* Match Badge */
+.match-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+  z-index: 10;
+  animation: slideInRight 0.5s ease;
+}
+
+.top-match-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(255, 215, 0, 0.95);
+  color: #333;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  z-index: 10;
+  animation: slideInLeft 0.5s ease;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* AI Search Hint */
+.ai-search-hint {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #555;
+  margin: 10px 0;
+  border-left: 3px solid #667eea;
+}
+
+/* AI Features Preview */
+.ai-features-preview {
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  padding: 20px;
+  border-radius: 12px;
+  margin-top: 20px;
+  border: 2px dashed #667eea;
+}
+
+.ai-features-preview h4 {
+  color: #667eea;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.ai-features-preview ul {
+  list-style: none;
+  padding: 0;
+}
+
+.ai-features-preview li {
+  padding: 8px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.ai-label {
+  color: #667eea;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Team Builder Modal */
+.team-builder-modal {
+  max-width: 700px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.btn-generate-team {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+}
+
+.btn-generate-team:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-generate-team:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.generated-team {
+  margin-top: 25px;
+  padding-top: 25px;
+  border-top: 2px solid #eee;
+}
+
+.generated-team h3 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+.team-members {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.team-member-card {
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 2px solid #eee;
+  transition: all 0.3s ease;
+}
+
+.team-member-card:hover {
+  border-color: #667eea;
+  transform: translateX(5px);
+}
+
+.member-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.member-info {
+  flex: 1;
+}
+
+.member-info h4 {
+  margin: 0 0 4px 0;
+  color: #333;
+  font-size: 15px;
+}
+
+.member-info p {
+  margin: 0 0 8px 0;
+  color: #777;
+  font-size: 13px;
+}
+
+.member-skills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.skill-tag-mini {
+  background: white;
+  color: #667eea;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid #667eea;
+}
+
+.relevance-score {
+  color: #667eea;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* AI Settings Modal */
+.ai-settings-modal {
+  max-width: 550px;
+}
+
+.settings-group {
+  margin: 20px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.settings-group label {
+  display: block;
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.settings-group input[type="checkbox"] {
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.settings-group input[type="range"] {
+  width: 100%;
+  margin: 10px 0;
+}
+
+.setting-description {
+  color: #777;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.analytics-preview {
+  margin-top: 25px;
+  padding-top: 25px;
+  border-top: 2px solid #eee;
+}
+
+.analytics-preview h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+.analytics-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.stat-box {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.stat-box .stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.stat-box .stat-label {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* Match Badge in Modal */
+.match-badge-modal {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+/* Enhanced Teammate Card */
+.teammate-card-find {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.teammate-card-find:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  border-color: #667eea;
+}
+
+/* Skill Tag Improvements */
+.skill-tag {
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  color: #667eea;
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  margin: 4px;
+  border: 1px solid #667eea30;
+}
+
+.skill-tag.more {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+/* Loading State */
+.btn-search-teammates:disabled,
+.btn-generate-team:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .analytics-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .team-member-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+/* Enhanced Modal Styling */
+.modal-content {
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Cluster Badge */
+.stat-mini {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #666;
+}
+
+.stat-icon {
+  font-size: 16px;
+}
+
+/* Success State for Sent Requests */
+.btn-send-collab.sent {
+  background: #22c55e;
+  color: white;
+  cursor: not-allowed;
+}
+
+.btn-send-collab.sent:hover {
+  background: #22c55e;
+  transform: none;
+}

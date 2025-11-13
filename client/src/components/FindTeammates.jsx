@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './FindTeammates.css';
+import axios from 'axios';
 
-const FindTeammates = ({ kanbanData }) => {
+const FindTeammates = ({ kanbanData, currentUserId = 1 }) => {
   const [filters, setFilters] = useState({
     skills: [],
     years: [],
@@ -9,19 +10,35 @@ const FindTeammates = ({ kanbanData }) => {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [showResults, setShowResults] = useState(false); // Only show after search
+  const [showResults, setShowResults] = useState(false);
   const [filteredTeammates, setFilteredTeammates] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [selectedTeammate, setSelectedTeammate] = useState(null);
   const [requestMessage, setRequestMessage] = useState('');
   const [projectForRequest, setProjectForRequest] = useState('');
+  
+  // AI-powered features
+  const [aiRecommendations, setAiRecommendations] = useState([]);
+  const [useAI, setUseAI] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [diversityWeight, setDiversityWeight] = useState(0.3);
+  const [showAISettings, setShowAISettings] = useState(false);
+  const [systemInitialized, setSystemInitialized] = useState(false);
+  const [analytics, setAnalytics] = useState(null);
+  const [showTeamBuilder, setShowTeamBuilder] = useState(false);
+  const [teamProject, setTeamProject] = useState('');
+  const [teamSize, setTeamSize] = useState(4);
+  const [generatedTeam, setGeneratedTeam] = useState([]);
+
+  const API_URL = 'http://localhost:5000/api';
 
   // Available filter options
   const availableSkills = [
     'React', 'Node.js', 'Python', 'Java', 'Machine Learning',
     'UI/UX Design', 'Data Science', 'MongoDB', 'SQL', 'AWS',
-    'Docker', 'C++', 'Flutter', 'Django', 'Express.js'
+    'Docker', 'C++', 'Flutter', 'Django', 'Express.js', 'TensorFlow',
+    'Kubernetes', 'Spring Boot', 'Arduino', 'Figma'
   ];
 
   const availableYears = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
@@ -31,17 +48,7 @@ const FindTeammates = ({ kanbanData }) => {
     'Mechanical', 'Civil', 'Electrical', 'Data Science'
   ];
 
-  // Get only TODO and IN PROGRESS projects from kanbanData
-  const getActiveProjects = () => {
-    if (!kanbanData) return [];
-    
-    const todoProjects = kanbanData.todo || [];
-    const inProgressProjects = kanbanData.inProgress || [];
-    
-    return [...todoProjects, ...inProgressProjects];
-  };
-
-  // Mock teammates data - will only show after search
+  // Sample students data (fallback)
   const allTeammates = [
     {
       id: 1,
@@ -141,10 +148,123 @@ const FindTeammates = ({ kanbanData }) => {
     }
   ];
 
-  const handleSearch = () => {
+  // Initialize AI system
+  useEffect(() => {
+    initializeAISystem();
+    loadAnalytics();
+  }, []);
+
+  const initializeAISystem = async () => {
+    try {
+      const response = await axios.post(`${API_URL}/initialize`, {
+        students: allTeammates
+      });
+      
+      if (response.data.success) {
+        setSystemInitialized(true);
+        console.log('✅ AI System initialized:', response.data.stats);
+      }
+    } catch (error) {
+      console.error('Failed to initialize AI system:', error);
+      setSystemInitialized(false);
+    }
+  };
+
+  const loadAnalytics = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/analytics`);
+      if (response.data.success) {
+        setAnalytics(response.data.analytics);
+      }
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+    }
+  };
+
+  const getActiveProjects = () => {
+    if (!kanbanData) return [];
+    const todoProjects = kanbanData.todo || [];
+    const inProgressProjects = kanbanData.inProgress || [];
+    return [...todoProjects, ...inProgressProjects];
+  };
+
+  const handleSearch = async () => {
+    setIsLoading(true);
+    
+    try {
+      if (useAI && systemInitialized) {
+        // AI-powered search
+        if (searchQuery.trim()) {
+          // Smart search with query understanding
+          const response = await axios.post(`${API_URL}/smart-search`, {
+            user_id: currentUserId,
+            query: searchQuery,
+            top_n: 8
+          });
+          
+          if (response.data.success) {
+            setAiRecommendations(response.data.recommendations);
+            setFilteredTeammates(response.data.recommendations);
+          }
+        } else {
+          // Standard AI recommendations with filters
+          const response = await axios.post(`${API_URL}/recommendations/${currentUserId}`, {
+            top_n: 8,
+            diversity_weight: diversityWeight,
+            filters: {
+              skills: filters.skills,
+              years: filters.years,
+              departments: filters.departments
+            }
+          });
+          
+          if (response.data.success) {
+            setAiRecommendations(response.data.recommendations);
+            setFilteredTeammates(response.data.recommendations);
+          }
+        }
+      } else {
+        // Fallback to traditional search
+        let result = [...allTeammates];
+
+        if (searchQuery.trim()) {
+          result = result.filter(tm =>
+            tm.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            tm.skills.some(skill => skill.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            tm.department.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+        }
+
+        if (filters.skills.length > 0) {
+          result = result.filter(tm =>
+            filters.skills.some(skill => tm.skills.includes(skill))
+          );
+        }
+
+        if (filters.years.length > 0) {
+          result = result.filter(tm => filters.years.includes(tm.year));
+        }
+
+        if (filters.departments.length > 0) {
+          result = result.filter(tm => filters.departments.includes(tm.department));
+        }
+
+        setFilteredTeammates(result);
+      }
+      
+      setShowResults(true);
+    } catch (error) {
+      console.error('Search failed:', error);
+      // Fallback to local search
+      handleLocalSearch();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLocalSearch = () => {
     let result = [...allTeammates];
 
-    // Apply search query
     if (searchQuery.trim()) {
       result = result.filter(tm =>
         tm.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -153,25 +273,48 @@ const FindTeammates = ({ kanbanData }) => {
       );
     }
 
-    // Apply skill filters
     if (filters.skills.length > 0) {
       result = result.filter(tm =>
         filters.skills.some(skill => tm.skills.includes(skill))
       );
     }
 
-    // Apply year filters
     if (filters.years.length > 0) {
       result = result.filter(tm => filters.years.includes(tm.year));
     }
 
-    // Apply department filters
     if (filters.departments.length > 0) {
       result = result.filter(tm => filters.departments.includes(tm.department));
     }
 
     setFilteredTeammates(result);
     setShowResults(true);
+  };
+
+  const handleTeamGeneration = async () => {
+    if (!teamProject.trim()) {
+      alert('Please describe your project');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const response = await axios.post(`${API_URL}/form-team`, {
+        project_description: teamProject,
+        team_size: teamSize,
+        exclude_ids: [currentUserId]
+      });
+      
+      if (response.data.success) {
+        setGeneratedTeam(response.data.team);
+      }
+    } catch (error) {
+      console.error('Team generation failed:', error);
+      alert('Failed to generate team. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const toggleFilter = (category, value) => {
@@ -199,6 +342,7 @@ const FindTeammates = ({ kanbanData }) => {
     });
     setSearchQuery('');
     setShowResults(false);
+    setGeneratedTeam([]);
   };
 
   const handleSendRequest = (teammate) => {
@@ -259,6 +403,11 @@ const FindTeammates = ({ kanbanData }) => {
             <div className="modal-header">
               <h2>Send Collaboration Request</h2>
               <p>To: {selectedTeammate?.name}</p>
+              {selectedTeammate?.match_percentage && (
+                <div className="match-badge-modal">
+                  🎯 {selectedTeammate.match_percentage}% Match
+                </div>
+              )}
             </div>
 
             <form onSubmit={submitRequest}>
@@ -300,10 +449,158 @@ const FindTeammates = ({ kanbanData }) => {
         </div>
       )}
 
+      {/* Team Builder Modal */}
+      {showTeamBuilder && (
+        <div className="modal-overlay" onClick={() => setShowTeamBuilder(false)}>
+          <div className="modal-content team-builder-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowTeamBuilder(false)}>×</button>
+            
+            <div className="modal-header">
+              <h2>🤖 AI Team Builder</h2>
+              <p>Let AI form the perfect team for your project</p>
+            </div>
+
+            <div className="form-group">
+              <label>Project Description</label>
+              <textarea
+                placeholder="Describe your project... (e.g., Building a mobile app for food delivery with React Native and Node.js backend)"
+                value={teamProject}
+                onChange={(e) => setTeamProject(e.target.value)}
+                rows="4"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Team Size: {teamSize}</label>
+              <input
+                type="range"
+                min="2"
+                max="6"
+                value={teamSize}
+                onChange={(e) => setTeamSize(parseInt(e.target.value))}
+              />
+            </div>
+
+            <button 
+              className="btn-generate-team"
+              onClick={handleTeamGeneration}
+              disabled={isLoading}
+            >
+              {isLoading ? '⏳ Generating...' : '✨ Generate Team'}
+            </button>
+
+            {generatedTeam.length > 0 && (
+              <div className="generated-team">
+                <h3>🎉 Your AI-Generated Team</h3>
+                <div className="team-members">
+                  {generatedTeam.map(member => (
+                    <div key={member.id} className="team-member-card">
+                      <div className="member-avatar">{member.avatar}</div>
+                      <div className="member-info">
+                        <h4>{member.name}</h4>
+                        <p>{member.department}</p>
+                        <div className="member-skills">
+                          {member.skills.slice(0, 3).map((skill, idx) => (
+                            <span key={idx} className="skill-tag-mini">{skill}</span>
+                          ))}
+                        </div>
+                        <div className="relevance-score">
+                          Relevance: {member.match_percentage}%
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* AI Settings Modal */}
+      {showAISettings && (
+        <div className="modal-overlay" onClick={() => setShowAISettings(false)}>
+          <div className="modal-content ai-settings-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowAISettings(false)}>×</button>
+            
+            <div className="modal-header">
+              <h2>⚙️ AI Settings</h2>
+            </div>
+
+            <div className="settings-group">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={useAI}
+                  onChange={(e) => setUseAI(e.target.checked)}
+                />
+                Enable AI-Powered Recommendations
+              </label>
+              <p className="setting-description">
+                Use machine learning to find the best matches based on skills, interests, and collaboration patterns
+              </p>
+            </div>
+
+            <div className="settings-group">
+              <label>Diversity Weight: {(diversityWeight * 100).toFixed(0)}%</label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={diversityWeight}
+                onChange={(e) => setDiversityWeight(parseFloat(e.target.value))}
+                disabled={!useAI}
+              />
+              <p className="setting-description">
+                Higher values prioritize diverse skill sets and backgrounds
+              </p>
+            </div>
+
+            {analytics && (
+              <div className="analytics-preview">
+                <h3>📊 System Analytics</h3>
+                <div className="analytics-stats">
+                  <div className="stat-box">
+                    <div className="stat-value">{analytics.total_students}</div>
+                    <div className="stat-label">Students</div>
+                  </div>
+                  <div className="stat-box">
+                    <div className="stat-value">{analytics.num_clusters}</div>
+                    <div className="stat-label">Clusters</div>
+                  </div>
+                  <div className="stat-box">
+                    <div className="stat-value">{(analytics.avg_similarity * 100).toFixed(0)}%</div>
+                    <div className="stat-label">Avg Match</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="teammates-header">
         <div>
           <h2>Find Teammates</h2>
           <p>Discover and connect with talented collaborators</p>
+        </div>
+        <div className="header-actions">
+          <button 
+            className="btn-team-builder"
+            onClick={() => setShowTeamBuilder(true)}
+          >
+            🤖 AI Team Builder
+          </button>
+          <button 
+            className="btn-ai-settings"
+            onClick={() => setShowAISettings(true)}
+          >
+            ⚙️ AI Settings
+          </button>
+          {systemInitialized && (
+            <span className="ai-badge">✨ AI Powered</span>
+          )}
         </div>
       </div>
 
@@ -322,7 +619,7 @@ const FindTeammates = ({ kanbanData }) => {
           <div className="search-box">
             <input
               type="text"
-              placeholder="Search by name, skill, department..."
+              placeholder={useAI ? "AI-powered search..." : "Search by name, skill..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => {
@@ -331,6 +628,12 @@ const FindTeammates = ({ kanbanData }) => {
             />
             <span className="search-icon">🔍</span>
           </div>
+
+          {useAI && (
+            <div className="ai-search-hint">
+              💡 Try: "Need frontend expert" or "Looking for ML engineer"
+            </div>
+          )}
 
           <FilterSection
             title="Skills"
@@ -350,12 +653,14 @@ const FindTeammates = ({ kanbanData }) => {
             category="departments"
           />
 
-          {/* Search Button */}
-          <button className="btn-search-teammates" onClick={handleSearch}>
-            🔍 Search Teammates
+          <button 
+            className="btn-search-teammates" 
+            onClick={handleSearch}
+            disabled={isLoading}
+          >
+            {isLoading ? '⏳ Searching...' : '🔍 Search Teammates'}
           </button>
 
-          {/* Active Filters Display */}
           {(filters.skills.length > 0 || filters.years.length > 0 || filters.departments.length > 0) && (
             <div className="active-filters">
               <h4>Active Filters</h4>
@@ -381,12 +686,28 @@ const FindTeammates = ({ kanbanData }) => {
             <div className="no-search-yet">
               <div className="no-search-icon">🔍</div>
               <h3>Ready to find your perfect teammate?</h3>
-              <p>Use the filters on the left and click "Search Teammates" to discover collaborators</p>
+              <p>Use the {useAI ? 'AI-powered' : ''} filters on the left and click "Search Teammates"</p>
+              {useAI && (
+                <div className="ai-features-preview">
+                  <h4>✨ AI Features Available:</h4>
+                  <ul>
+                    <li>🎯 Smart matching based on skills & interests</li>
+                    <li>🧠 Natural language search</li>
+                    <li>🔮 Diversity-aware recommendations</li>
+                    <li>🤝 Automatic team formation</li>
+                  </ul>
+                </div>
+              )}
             </div>
           ) : (
             <>
               <div className="results-header">
-                <h3>{filteredTeammates.length} Teammates Found</h3>
+                <h3>
+                  {filteredTeammates.length} Teammates Found
+                  {useAI && aiRecommendations.length > 0 && (
+                    <span className="ai-label"> (AI Ranked)</span>
+                  )}
+                </h3>
               </div>
 
               {filteredTeammates.length === 0 ? (
@@ -397,8 +718,19 @@ const FindTeammates = ({ kanbanData }) => {
                 </div>
               ) : (
                 <div className="teammates-grid">
-                  {filteredTeammates.map(teammate => (
+                  {filteredTeammates.map((teammate, index) => (
                     <div key={teammate.id} className="teammate-card-find">
+                      {useAI && teammate.match_percentage && (
+                        <div className="match-badge">
+                          🎯 {teammate.match_percentage}% Match
+                        </div>
+                      )}
+                      {useAI && index < 3 && (
+                        <div className="top-match-badge">
+                          {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'} Top Match
+                        </div>
+                      )}
+                      
                       <div className="teammate-card-header">
                         <div className="teammate-avatar-large">{teammate.avatar}</div>
                         <span className={`availability-badge ${teammate.availability.toLowerCase()}`}>
@@ -411,9 +743,12 @@ const FindTeammates = ({ kanbanData }) => {
                       <p className="teammate-bio">{teammate.bio}</p>
 
                       <div className="teammate-skills">
-                        {teammate.skills.map((skill, idx) => (
+                        {teammate.skills.slice(0, 4).map((skill, idx) => (
                           <span key={idx} className="skill-tag">{skill}</span>
                         ))}
+                        {teammate.skills.length > 4 && (
+                          <span className="skill-tag more">+{teammate.skills.length - 4}</span>
+                        )}
                       </div>
 
                       <div className="teammate-stats">
@@ -425,6 +760,12 @@ const FindTeammates = ({ kanbanData }) => {
                           <span className="stat-icon">⭐</span>
                           <span>{teammate.rating}</span>
                         </div>
+                        {teammate.cluster_id !== undefined && (
+                          <div className="stat-mini">
+                            <span className="stat-icon">🏷️</span>
+                            <span>Group {teammate.cluster_id}</span>
+                          </div>
+                        )}
                       </div>
 
                       <button
