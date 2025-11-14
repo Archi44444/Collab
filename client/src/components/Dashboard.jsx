@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PeerReview from './PeerReview';
 import FindTeammates from './FindTeammates';
 import Analytics from './Analytics';
+import Notification from './Notification';
+import Profile from './Profile';
 import './Dashboard.css';
 
-const Dashboard = () => {
+const Dashboard = ({ userData, onUpdateUserData, onLogout }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('projects');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,6 +23,61 @@ const Dashboard = () => {
     inProgress: [],
     completed: []
   });
+  
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    if (showProfileDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfileDropdown]);
+
+  const handleUpdateProfile = (newData) => {
+    if (onUpdateUserData) {
+      onUpdateUserData(newData);
+    }
+    setShowProfileModal(false);
+  };
+
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+    }
+    navigate('/login');
+  };
+
+  const [notifications, setNotifications] = useState([]);
+
+  const handleMarkAsRead = (id) => {
+    setNotifications(nots => nots.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const handleAccept = (id) => {
+    console.log('Accepted request:', id);
+    setNotifications(nots => nots.filter(n => n.id !== id));
+  };
+
+  const handleReject = (id) => {
+    console.log('Rejected request:', id);
+    setNotifications(nots => nots.filter(n => n.id !== id));
+  };
+
+  const handleClear = () => {
+    setNotifications([]);
+  };
 
   // Drag and Drop handlers
   const [draggedItem, setDraggedItem] = useState(null);
@@ -34,9 +91,9 @@ const Dashboard = () => {
     
     return {
       activeProjects,
-      connections: 0, // Will be dynamic when you add connections feature
+      connections: 0,
       tasksCompleted,
-      avgRating: 0.0, // Will be dynamic when you add ratings feature
+      avgRating: 0.0,
       totalTasks
     };
   };
@@ -55,12 +112,10 @@ const Dashboard = () => {
   const handleDrop = (targetColumn) => {
     if (!draggedItem || !draggedFrom) return;
 
-    // Remove from source column
     const sourceItems = kanbanData[draggedFrom].filter(
       item => item.id !== draggedItem.id
     );
 
-    // Add to target column
     const targetItems = [...kanbanData[targetColumn], draggedItem];
 
     setKanbanData({
@@ -73,15 +128,11 @@ const Dashboard = () => {
     setDraggedFrom(null);
   };
 
-  // Handle dropdown status change
   const handleStatusChange = (taskId, currentColumn, newStatus) => {
     const task = kanbanData[currentColumn].find(t => t.id === taskId);
     if (!task) return;
 
-    // Remove from current column
     const updatedCurrentColumn = kanbanData[currentColumn].filter(t => t.id !== taskId);
-    
-    // Add to new column
     const updatedNewColumn = [...kanbanData[newStatus], task];
 
     setKanbanData({
@@ -107,13 +158,11 @@ const Dashboard = () => {
       assignee: newProject.assignee
     };
 
-    // Add new project to TODO column
     setKanbanData({
       ...kanbanData,
       todo: [...kanbanData.todo, newTask]
     });
 
-    // Reset form and close modal
     setNewProject({ title: '', description: '', assignee: 'You' });
     setIsModalOpen(false);
   };
@@ -289,13 +338,13 @@ const Dashboard = () => {
           </div>
         );
       case 'teammates':
-      return <FindTeammates kanbanData={kanbanData} />; 
-    case 'analytics':
-  return <Analytics kanbanData={kanbanData} />;
-    case 'reviews':
-      return <PeerReview kanbanData={kanbanData} />; 
-    default:
-      return null;
+        return <FindTeammates kanbanData={kanbanData} />; 
+      case 'analytics':
+        return <Analytics kanbanData={kanbanData} />;
+      case 'reviews':
+        return <PeerReview kanbanData={kanbanData} />; 
+      default:
+        return null;
     }
   };
 
@@ -351,18 +400,67 @@ const Dashboard = () => {
 
       {/* Header */}
       <header className="dashboard-header">
-        <div className="logo-section">
-          <div className="logo">
-            <div className="logo-gradient"></div>
-          </div>
-          <div className="brand">
-            <h1>CollabSphere</h1>
+  <div className="logo-section">
+    <div className="brand">
+      <h1>CollabSphere</h1>
+    </div>
+  </div>
+
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <Notification
+            notifications={notifications}
+            onMarkAsRead={handleMarkAsRead}
+            onAcceptRequest={handleAccept}
+            onRejectRequest={handleReject}
+            onClearNotification={handleClear}
+          />
+          
+          {/* Profile Dropdown */}
+          <div className="profile-dropdown-container" ref={dropdownRef}>
+            <button 
+              className="profile-trigger"
+              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+            >
+              {userData?.profilePic ? (
+                <img 
+                  src={typeof userData.profilePic === 'string' 
+                    ? userData.profilePic 
+                    : URL.createObjectURL(userData.profilePic)
+                  } 
+                  alt="Profile" 
+                  className="profile-avatar" 
+                />
+              ) : (
+                <div className="default-avatar">
+                  {userData?.fullName?.charAt(0).toUpperCase() || 'U'}
+                </div>
+              )}
+            </button>
+            
+            {showProfileDropdown && (
+              <div className="profile-dropdown-menu">
+                <button 
+                  className="dropdown-item"
+                  onClick={() => {
+                    setShowProfileModal(true);
+                    setShowProfileDropdown(false);
+                  }}
+                >
+                  <span className="dropdown-icon">👤</span>
+                  Profile
+                </button>
+                <button 
+                  className="dropdown-item logout"
+                  onClick={handleLogout}
+                >
+                  <span className="dropdown-icon">🚪</span>
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </div>
-        <button className="btn-signout" onClick={() => navigate('/login')}>
-          <span className="signout-icon">↗</span>
-          Sign Out
-        </button>
       </header>
 
       {/* Stats Section */}
@@ -461,10 +559,20 @@ const Dashboard = () => {
       <div className="main-content">
         {renderTabContent()}
       </div>
+
+      {/* Profile Modal */}
+      {showProfileModal && userData && (
+        <Profile
+          userData={userData}
+          onUpdateProfile={handleUpdateProfile}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
     </div>
   );
 };
 
 export default Dashboard;
+
 
 

@@ -26,25 +26,19 @@
   gap: 15px;
 }
 
-.logo {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.logo-gradient {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-}
-
 .brand h1 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1a202c;
-  margin-bottom: 2px;
+  background: linear-gradient(90deg, #3b82f6 0%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0;
+  white-space: nowrap;
+  display: inline-block;
+  line-height: 1.2;
 }
+
 
 .brand p {
   font-size: 0.9rem;
@@ -672,4 +666,94 @@
 
 .btn-create-first:active {
   transform: translateY(0);
+}
+/* Profile Dropdown */
+.profile-dropdown-container {
+  position: relative;
+}
+
+.profile-trigger {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.profile-trigger:hover {
+  border-color: #3b82f6;
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.profile-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.default-avatar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.profile-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 48px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  min-width: 180px;
+  overflow: hidden;
+  z-index: 1000;
+  animation: fadeIn 0.2s;
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1a202c;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dropdown-item:hover {
+  background: #f8fafc;
+}
+
+.dropdown-item.logout {
+  color: #ef4444;
+  border-top: 1px solid #f1f5f9;
+}
+
+.dropdown-item.logout:hover {
+  background: #fef2f2;
+}
+
+.dropdown-icon {
+  font-size: 1.2rem;
 }
